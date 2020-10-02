@@ -1,0 +1,40 @@
+/*
+**  Demo Song Select
+*/
+
+.demo-song-select {
+    
+}
+
+.demo-song-select h3 {
+    background-color: green;
+    color: white;
+    font-weight: 100;
+    font-style: italic;
+
+    border: 5px solid greenyellow;
+    border-radius: 1em;
+
+    font-family: 'Bungee';
+}
+
+.demo-song-select select {
+    font-size: 1.5em;
+    line-height: 2.25em;
+    width: 100%;
+}
+
+.demo-song-select ul li {
+    background-color: gray;
+    color: white;
+
+    border: 5px solid lightblue;
+}
+
+.demo-song-select ul li:hover {
+    background-color: green;
+    color: white;
+
+    border: 5px solid greenyellow;
+    border-radius: 1em;
+}

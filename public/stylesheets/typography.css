@@ -13,10 +13,10 @@
 */
 
 body {
-    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
 }
 
-h1,h2,h3,h4,h5,h6 {
+h1,h2,h3,h4,h5,h6,select {
     font-family: 'Arimo', Verdana, Geneva, Tahoma, sans-serif;
 }
 
