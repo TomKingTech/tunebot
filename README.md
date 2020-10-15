@@ -9,7 +9,7 @@ Take your Twitch channel chat room and turn it into a fully-automated music triv
 - [NodeJS](https://nodejs.org/en/)
 - [Express](https://expressjs.com/)
 - [TMI.js](https://tmijs.com/) (JS package for Twitch)
-- Node Modules > [csv-parser](https://www.npmjs.com/package/csv-parser), fs
+- Node Modules > [csv-parser](https://www.npmjs.com/package/csv-parser), [csv-writer](https://www.npmjs.com/package/csv-writer), [fs](https://nodejs.org/api/fs.html)
 
 ---
 
@@ -30,3 +30,10 @@ Here is the basic flow from start-to-finish:
 5. The inbound message will then be compared with the active entry being read from the .csv; if answer is correct, the player will be scored according to the order in which correct answers are received.
 
 6. Once the bot/broadcaster types a unique message in chat, the next entry in the .csv is made active, and this cycle continues until the entire .csv has been "parsed."
+
+---
+
+## Future Goals for Tunebot.js
+
+- Front-end to interact with the chat bot and click options to change songs, change rounds, type in song titles, perhaps event import files.
+- Bring data collected and publish onto a website as a leaderboard or stat tracker. Some data visualization opportunities here!
