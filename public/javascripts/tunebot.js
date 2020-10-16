@@ -1,54 +1,28 @@
 /*
 **  TUNEBOT
-**  The chat bot for music (and other) trivia contests!
+**  The chatbot for music trivia contests on Twitch!
 **
 **  Author : Thomas King
 **  Date : October 4th, 2020
-**
 */
 
 /*
 **
-**  (*) - Ensure that a round and number is actively selected on the website.
-**  (1) - Take in message from chat.
-**  (2) - Pass message into 'answerChecker'.
-**  (3a) - If correct, add to next entry in array correctAnswers.
+**  (1) - Read message from chat.
+**  (2) - Check answer.
+**  (3a) - If correct, add to list of correct answers.
 **  (3b) - If incorrect, ignore.
-**  (4) - If the number changes mid-round, update the points on the leaderboard.
-**  (5) - If the round number changes, update the points on the leaderboard.
-**
+**  (3c) - If correct but fourth answer, ignore.
+**  (4) - If next song, update tracker.
+**  (5) - If next song, update leaderboard.
+**  (6) - Purge temporary items and increase song number.
+**  (7) - Move to step 1 with new song, repeat.
 */
 
 // Requires the TMI.js module from the Twitch Chat API.
 const tmi = require('tmi.js');
 
-/*
-// Select the five song selector areas in demo-song-select.
-const songSelect1 = document.querySelector(".song-select-1");
-const songSelect2 = document.querySelector(".song-select-2");
-const songSelect3 = document.querySelector(".song-select-3");
-const songSelect4 = document.querySelector(".song-select-4");
-const songSelect5 = document.querySelector(".song-select-5");
-
-// Select the content of the option element inside the select element.
-const roundSelect = document.querySelector(".round-select");
-
-// Listen for clicks and update the score when done.
-songSelect1.addEventListener("click", scoreUpdate(songSelect1));
-songSelect2.addEventListener("click", scoreUpdate(songSelect2));
-songSelect3.addEventListener("click", scoreUpdate(songSelect3));
-songSelect4.addEventListener("click", scoreUpdate(songSelect4));
-songSelect5.addEventListener("click", scoreUpdate(songSelect5));
-
-// Listen for the value to change in the .round-select select element.
-roundSelect.addEventListener("change", verifyRound);
-
-function verifyRound() {
-    console.log(roundSelect.value);
-};
-*/
-
-// Define configuration options
+// Define configuration options for Tunebot.
 const opts = {
   identity: {
     username: "powertomario",
@@ -59,22 +33,27 @@ const opts = {
   ]
 };
 
-// Create a client with our options
+// Create a client with our configuration options.
 const client = new tmi.client(opts);
 
-// Register our event handlers (defined below)
+// Register our event handlers (defined below.)
 client.on('message', onMessageHandler);
 client.on('connected', onConnectedHandler);
 
-// Connect to Twitch:
+// Connect to Twitch.
 client.connect();
 
 // Bring in the 'csv-parser' and 'fs' NodeJS modules.
 const csv = require('csv-parser');
 const fs = require('fs');
 
-// Bring in the 'csv-writer' NodeJs module.
+// Bring in the 'csv-writer' NodeJS module, and create a CSV writer object.
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+
+// Empty out all object references and values.
+function isEmpty(obj) {
+  return Object.keys(obj).length === 0;
+}
 
 // Create the initial header information to write to scoreboard.csv
 const csvWriterScoreboard = createCsvWriter({
@@ -96,57 +75,74 @@ const csvWriterGuessedBy = createCsvWriter({
   ]
 });
 
+
+/*
+**  Initializing variables for future functions.
+*/
+
 let songsList = []; // This is to capture all songs in the .csv file.
 let correctAnswers = []; // This is for all users who answer correctly.
 let currentScores = []; // This is for the scoreboard updates.
+let songNumber = 1; // First song in a new Tunebot contest.
 
-function isEmpty(obj) {
-  return Object.keys(obj).length === 0;
-}
 
-// Write the users who answered correctly into the songsguessed.csv file.
-function writeCorrectAnswers(songNum, usersAnswered) {
+/*
+**  Track the users who answered correctly with the songsguessed.csv file.
+*/
+
+function trackCorrectAnswers(songNum, usersAnswered) {
+  // Capture who answered this song correctly.
   const records = [
     {songnumber: songNum, guessedby1: usersAnswered[0], guessedby2: usersAnswered[1], guessedby3: usersAnswered[2]}
    ];
 
+   console.log(records + "\n"); // Log who got this song correct.
+
+  // Enter a new record into the songsguessed.csv file (new line written).
   csvWriterGuessedBy.writeRecords(records)
     .then( () => {
-      console.log('Correct answers for Song # ' + songNum + ' have been logged successfully!')
-  });
+      console.log("Correct answers for Song # " + songNum + " have been logged successfully!\n") // Log that the .writeRecords() method succeeded.
+    });
+
+  console.log(records + "\n"); // Log that the records object still contains data to use.
 
   // Overwrite the scoreboard.csv file with updated standings.
   fs.createReadStream('scoreboard.csv')
   .pipe(csv())
   .on('data', (data) => {
-    currentScores.push(data)
+    console.log("\nNew data from scoreboard: " + data); // Log that data from scoreboard.csv was accepted.
+    currentScores.push(data);
   })
   .on('end', () => {
 
     // Determine if any of the scoring individuals matched.
-    let matchCounter1 = 0;
-    let matchCounter2 = 0;
-    let matchCounter3 = 0;
+    let matchCounter1 = 0; // Did the first correct match an existing entry?
+    let matchCounter2 = 0; // Did the second correct match an existing entry?
+    let matchCounter3 = 0; // Did the third correct match an existing entry?
 
     // If we have an active scoreboard...
     if (!isEmpty(currentScores)) {
       console.log("There is an active scoreboard!");
       for (i = 0 ; i <= currentScores.length ; i++) {
+        // If there was one correct answer...
         if (currentScores[i].Username === records.guessedby1) {
+          console.log(records.guessedby1 + " just scored 2 points!"); // Log that the first guesser scored 2 points.
           let currentScore = parseInt(currentScores[i].score); // Change the string of 'Score' and turn it into a number.
           currentScore = currentScore + 2;
           currentScores[i].score = currentScore.toString();
-          console.log(records.guessedby1 + " has scored " + currentScores[i].score + " points!");
+          console.log(records.guessedby1 + " has a total of " + currentScores[i].score + " points!"); // Log the new score for this guesser.
           matchCounter1++;
         }
-        else if (currentScores[i].Username === records.guessedby2) {
+        // If there was a second correct answer...
+        if (currentScores[i].Username === records.guessedby2) {
           let currentScore = parseInt(currentScores[i].score); // Change the string of 'Score' and turn it into a number.
           currentScore = currentScore + 1;
           currentScores[i].score = currentScore.toString();
           console.log(records.guessedby2 + " has scored " + currentScores[i].score + " points!");
           matchCounter2++;
         }
-        else if (currentScores[i].Username === records.guessedby3) {
+        // If there was a third correct answer...
+        if (currentScores[i].Username === records.guessedby3) {
           let currentScore = parseInt(currentScores[i].score); // Change the string of 'Score' and turn it into a number.
           currentScore = currentScore + 1;
           currentScores[i].score = currentScore.toString();
@@ -303,10 +299,11 @@ function checkAnswer(currentSong, answer, usersName) {
   });
 };
 
-// First song in a new Tunebot contest.
-let songNumber = 1;
+/*
+**  Every time a message is typed into the Twitch chat, do stuff with it!
+**  Here is our meat and potatoes of Tunebot.js!
+*/
 
-// Called every time a message comes in
 function onMessageHandler (target, context, msg, self) {
   
   // Remove whitespace from chat message
@@ -321,8 +318,8 @@ function onMessageHandler (target, context, msg, self) {
 
   if(nextMessage === "Next Song" && userAnswering === "powertomario") { // If next song
   
-    // Log who answered correctly, then clear the array.
-    writeCorrectAnswers(songNumber, correctAnswers);
+    // Track who answered correctly, then clear the array.
+    trackCorrectAnswers(songNumber, correctAnswers);
     emptyCorrectAnswers();
 
     // Increases current song number by 1.
