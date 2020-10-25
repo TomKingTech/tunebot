@@ -55,15 +55,6 @@ function isEmpty(obj) {
   return Object.keys(obj).length === 0;
 }
 
-// Create the initial header information to write to scoreboard.csv
-const csvWriterScoreboard = createCsvWriter({
-  path: 'scoreboard.csv',
-  header: [
-    {id: 'username', title: 'Username'},
-    {id: 'score', title: 'Score'}
-  ]
-});
-
 // Create the initial header information to write to songsguessed.csv
 const csvWriterGuessedBy = createCsvWriter({
   path: 'songsguessed.csv',
@@ -72,6 +63,15 @@ const csvWriterGuessedBy = createCsvWriter({
     {id: 'guessedby1', title: 'GuessedBy1'},
     {id: 'guessedby2', title: 'GuessedBy2'},
     {id: 'guessedby3', title: 'GuessedBy3'}
+  ]
+});
+
+// Create the initial header information to write to scoreboard.csv
+const csvWriterScoreboard = createCsvWriter({
+  path: 'scoreboard.csv',
+  header: [
+    {id: 'username', title: 'Username'},
+    {id: 'score', title: 'Score'}
   ]
 });
 
@@ -92,11 +92,9 @@ let songNumber = 1; // First song in a new Tunebot contest.
 
 function trackCorrectAnswers(songNum, usersAnswered) {
   // Capture who answered this song correctly.
-  const records = [
-    {songnumber: songNum, guessedby1: usersAnswered[0], guessedby2: usersAnswered[1], guessedby3: usersAnswered[2]}
-   ];
-
-   console.log(records + "\n"); // Log who got this song correct.
+  let records = {songnumber: songNum.toString(), guessedby1: usersAnswered[0], guessedby2: usersAnswered[1], guessedby3: usersAnswered[2]};
+  
+  console.log(records); // Who got answers correct?
 
   // Enter a new record into the songsguessed.csv file (new line written).
   csvWriterGuessedBy.writeRecords(records)
@@ -104,16 +102,38 @@ function trackCorrectAnswers(songNum, usersAnswered) {
       console.log("Correct answers for Song # " + songNum + " have been logged successfully!\n") // Log that the .writeRecords() method succeeded.
     });
 
-  console.log(records + "\n"); // Log that the records object still contains data to use.
+  records.length = 0;
+  return;
+}
 
-  // Overwrite the scoreboard.csv file with updated standings.
-  fs.createReadStream('scoreboard.csv')
+function updateScoreboard(songNum, usersAnswered) {
+
+  // Capture who answered this song correctly.
+  let records = {songnumber: songNum, guessedby1: usersAnswered[0], guessedby2: usersAnswered[1], guessedby3: usersAnswered[2]};
+
+  // Overwrite the test.csv file with updated standings.
+  fs.createReadStream('test.csv')
   .pipe(csv())
   .on('data', (data) => {
-    console.log("\nNew data from scoreboard: " + data); // Log that data from scoreboard.csv was accepted.
     currentScores.push(data);
+    console.log(currentScores);
   })
   .on('end', () => {
+    
+    console.log("\n");
+    console.log("Current Scoreboard")
+    for (i = 0; i < currentScores.length; i++) {
+      console.log(currentScores[i].Name + " " + currentScores[i].Score);
+      console.log(typeof(currentScores[i].Name) + " " + typeof(currentScores[i].Score));
+    }
+    console.log("\n");
+
+    console.log("People Who Scored For Song #" + songNum);
+    console.log(records.songnumber + " " + typeof(records.songnumber));
+    console.log(records.guessedby1 + " " + typeof(records.guessedby1));
+    console.log(records.guessedby2 + " " + typeof(records.guessedby2));
+    console.log(records.guessedby3 + " " + typeof(records.guessedby3));
+    console.log("\n");
 
     // Determine if any of the scoring individuals matched.
     let matchCounter1 = 0; // Did the first correct match an existing entry?
@@ -123,112 +143,236 @@ function trackCorrectAnswers(songNum, usersAnswered) {
     // If we have an active scoreboard...
     if (!isEmpty(currentScores)) {
       console.log("There is an active scoreboard!");
-      for (i = 0 ; i <= currentScores.length ; i++) {
+      let currentScore = 0;
+
+      for (i = 0 ; i < currentScores.length ; i++) {
         // If there was one correct answer...
-        if (currentScores[i].Username === records.guessedby1) {
+        if (currentScores[i].Name === records.guessedby1) {
           console.log(records.guessedby1 + " just scored 2 points!"); // Log that the first guesser scored 2 points.
-          let currentScore = parseInt(currentScores[i].score); // Change the string of 'Score' and turn it into a number.
+
+          currentScore = parseInt(currentScores[i].Score); // Change the string of 'Score' and turn it into a number.
           currentScore = currentScore + 2;
-          currentScores[i].score = currentScore.toString();
-          console.log(records.guessedby1 + " has a total of " + currentScores[i].score + " points!"); // Log the new score for this guesser.
+          currentScores[i].Score = currentScore.toString();
+
+          console.log(currentScores[i].Score);
+          console.log(typeof(currentScores[i].Score));
+
+          console.log(records.guessedby1 + " has a total of " + currentScores[i].Score + " points!"); // Log the new score for this guesser.
+          
           matchCounter1++;
         }
         // If there was a second correct answer...
-        if (currentScores[i].Username === records.guessedby2) {
-          let currentScore = parseInt(currentScores[i].score); // Change the string of 'Score' and turn it into a number.
+        else if (currentScores[i].Name === records.guessedby2) {
+          console.log(records.guessedby2 + " just scored 1 point!");
+
+          currentScore = parseInt(currentScores[i].Score); // Change the string of 'Score' and turn it into a number.
+          console.log(typeof(currentScore));
           currentScore = currentScore + 1;
-          currentScores[i].score = currentScore.toString();
-          console.log(records.guessedby2 + " has scored " + currentScores[i].score + " points!");
+          currentScores[i].Score = currentScore.toString();
+
+          console.log(currentScores[i].Score);
+          console.log(typeof(currentScores[i].Score));
+
+          console.log(records.guessedby2 + " has a total of " + currentScores[i].Score + " points!");
+
           matchCounter2++;
         }
         // If there was a third correct answer...
-        if (currentScores[i].Username === records.guessedby3) {
-          let currentScore = parseInt(currentScores[i].score); // Change the string of 'Score' and turn it into a number.
+        else if (currentScores[i].Name === records.guessedby3) {
+          console.log(records.guessedby3 + " just scored 1 point!");
+
+          currentScore = parseInt(currentScores[i].Score); // Change the string of 'Score' and turn it into a number.
           currentScore = currentScore + 1;
-          currentScores[i].score = currentScore.toString();
-          console.log(records.guessedby3 + " has scored " + currentScores[i].score + " points!");
+          currentScores[i].Score = currentScore.toString();
+
+          console.log(currentScores[i].Score);
+          console.log(typeof(currentScores[i].Score));
+
+          console.log(records.guessedby3 + " has a total of " + currentScores[i].Score + " points!");
+          
           matchCounter3++;
         }
+      }
 
-        // If the leaderboard is active, but we have new scorers...
-        if (matchCounter1 === 0) {
-          let newPosition = currentScores.length;
-          currentScores[newPosition].Username = records.guessedby1;
-          currentScores[newPosition].score = "2";
-          console.log(records.guessedby1 + " has scored " + currentScores[newPosition].score + " points and has joined the leaderboard!");
-        }
-        if (matchCounter2 === 0) {
-          let newPosition = currentScores.length;
-          currentScores[currentScores.length].Username = records.guessedby2;
-          currentScores[currentScores.length].score = "1";
-          console.log(records.guessedby2 + " has scored " + currentScores[newPosition].score + " points and has joined the leaderboard!");
-        }
-        if (matchCounter3 === 0) {
-          let newPosition = currentScores.length;
-          currentScores[currentScores.length].Username = records.guessedby3;
-          currentScores[currentScores.length].score = "1";
-          console.log(records.guessedby3 + " has scored " + currentScores[newPosition].score + " points and has joined the leaderboard!");
-        }
+      // If the leaderboard is active, but we have new scorers...
+      if (matchCounter1 === 0  && typeof(records.guessedby1) !== "undefined") {
+        console.log(records.guessedby1 + " has scored 2 points and has joined the leaderboard!");
+
+        let newEntry1 = {Name: records.guessedby1, Score: "2"};
+
+        currentScores.push(newEntry1);
+        console.log(currentScores);
+
+        newEntry1 = {};
+        
+      }
+      if (matchCounter2 === 0  && typeof(records.guessedby2) !== "undefined") {
+          console.log(records.guessedby3 + " has scored 1 point and has joined the leaderboard!");
+
+          let newEntry2 = {Name: records.guessedby2, Score: "1"};
+
+          currentScores.push(newEntry2);
+          console.log(currentScores);
+
+          newEntry2 = {};
+      }
+      if (matchCounter3 === 0  && typeof(records.guessedby3) !== "undefined") {
+          console.log(records.guessedby3 + " has scored 1 point and has joined the leaderboard!");
+
+          let newEntry3 = {Name: records.guessedby3, Score: "1"};
+
+          currentScores.push(newEntry3);
+          console.log(currentScores);
+
+          newEntry3 = {};
       }
     }
     // If nobody has scored yet...
     else if (isEmpty(currentScores)) {
+
       console.log("There is an empty scoreboard!");
-      console.log(records.guessedby1);
-      if (records.guessedby1) {
-        currentScores[0].Username = records.guessedby1;
-        currentScores[0].score = "2";
-        console.log(records.guessedby1 + " has scored " + currentScores[0].score + " points!");
+
+      currentScores = [];
+      console.log(currentScores);
+
+      if (typeof(records.guessedby1) !== "undefined") {
+        currentScores.push({Name: records.guessedby1.toString(), Score: "2"});
+        console.log(currentScores[0].Name + " has scored " + currentScores[0].Score + " points!");
       }
-      else if (records.guessedby2) {
-        currentScores[1].Username = records.guessedby2;
-        currentScores[1].score = "1";
-        console.log(records.guessedby2 + " has scored " + currentScores[1].score + " points!");
+      if (typeof(records.guessedby2) !== "undefined") {
+        currentScores.push({Name: records.guessedby2.toString(), Score: "1"});
+        console.log(currentScores[1].Name + " has scored " + currentScores[1].Score + " point!");
       }
-      else if (records.guessedby3) {
-        currentScores[2].Username = records.guessedby3;
-        currentScores[2].score = "1";
-        console.log(records.guessedby3 + " has scored " + currentScores[2].score + " points!");
+      if (typeof(records.guessedby3) !== "undefined") {
+        currentScores.push({Name: records.guessedby3.toString(), Score: "1"});
+        console.log(currentScores[2].Name + " has scored " + currentScores[2].Score + " point!");
       }
     }
 
-    // Overwrite the scoreboard.csv file.
-    writeNewScoreboard(currentScores);
+    console.log("Current (Unsorted) Leaderboard");
+    console.log(currentScores);
+    console.log("\n");
+
+    console.log("There are " + currentScores.length + " players on the scoreboard!");
+
+    if(typeof(records.guessedby1) !== "undefined") {
+      console.log("\nSorting the scores for Song #" + songNum + ".");
+      currentScores = sortNewLeaderboard(currentScores); // Order from largest score to smallest score.
+
+      // Overwrite the test.csv file.
+      writeNewScoreboard(currentScores);
+      currentScores.length = 0;
+    }
   });
   
   records.length = 0;
   return;
 };
 
-// Take all the newPointsScored and overwrite the existing scoreboard.csv
-function writeNewScoreboard (newPointsScored) {
-  
-  const fileName = 'scoreboard.csv';
+function sortNewLeaderboard(theScoreboard) {
+  console.log(theScoreboard); // What is inside this new scoreboard?
 
-  fs.writeFile(fileName, extractAsCSV(newPointsScored), err => {
-    if (err) {
-      console.log("Hey, the scoredboard did not get updated. What gives?");
-    }
-    else {
-      console.log ("The scoreboard was updated!");
-    }
-  });
-  // Take in scoreboard.csv
-  // Pass data into an array object
-  // Look for any username matches
-  // Add their current score and their new points
-  // Overwrite the entry in the array that matches their username
-  // Do the previous steps with all other guesses until we are ready to write to scoreboard.csv
+  let sortedScoreboard = []; // Initialize the array to contained the sorted leaderboard.
+  let objectToBeSorted = {}; // Initialize the object that will store temporary objects to be sorted.
+  let checkLength = theScoreboard.length;  // Using the array length for sorting.
+  let x;  // Used to compare scores in higher indices in the sortedScoreboard.
+  let start;  // Used to determine the array index to wedge the score into when sorting.
+  let deleteCount = 0;  // We are not deleting any entries in the leaderboard.
+
+  for(i = 0; i < theScoreboard.length; i++) {
+
+      objectToBeSorted = theScoreboard[i];
+
+      console.log("What are we sorting?");
+      console.log(objectToBeSorted);
+      console.log("\n");
+
+      if(checkLength === 0) {
+          break;  // Exit the loop if the scoreboard is empty, no point in sorting.
+      }
+
+      if(isEmpty(sortedScoreboard)) {  // If the sorted scoreboard is empty.
+          console.log("The scoreboard was empty...placing score for " + objectToBeSorted.Name);
+          sortedScoreboard.push(objectToBeSorted);
+          console.log(sortedScoreboard);
+          console.log("\n");
+      }
+      else if(objectToBeSorted.Score > sortedScoreboard[sortedScoreboard.length - 1].Score) {  // New score is greater than the very last index.
+          if(sortedScoreboard.length - 1 === 0) {  // New score is greater than the current index AND that just happens to be index[0] of the array.
+              console.log("This is the new highest score, by " + objectToBeSorted.Name);
+              sortedScoreboard.unshift(objectToBeSorted);  // Shove item into the first array index, move all others forward.
+          }
+          else {
+              x = sortedScoreboard.length - 2;
+              while(x >= 0) {
+                  if(objectToBeSorted.Score <= sortedScoreboard[x].Score) {  // If the current score is less than or equal to the next index of the array, splice it in between it and the lower index.
+                      console.log("Placing " + objectToBeSorted.Name + " between " + sortedScoreboard[x].Name + " and " + sortedScoreboard[x+1].Name);
+                      start = x + 1;
+                      sortedScoreboard.splice(start, deleteCount, objectToBeSorted);
+                      break;
+                  }
+                  x--;
+              }
+
+              if(x < 0) {  // If we arrive at the curent score being higher than all other scores? Shove item into the first array index, move all others forward.
+                  console.log("This is the latest high score, set by " + objectToBeSorted.Name);
+                  sortedScoreboard.unshift(objectToBeSorted);
+              }
+
+          }
+      }
+      else if(objectToBeSorted.Score <= sortedScoreboard[sortedScoreboard.length - 1].Score) {  // If the current score is less than or equal to the very last index, push the score to the end of the array.
+          sortedScoreboard.push(objectToBeSorted);
+      }
+  }
+
+  console.log("The newly sorted scoreboard!");
+  console.log(sortedScoreboard);
+
+  return sortedScoreboard;
 };
 
 // Extract the currentScores as CSV data.
-function extractAsCSV(scoreData) {
-  const sameHeaders = ["Username,Score"];
-  const rows = scoreData.map(user =>
-    `${user.username},${user.score}`
+function extractAsCSV(headers, data) {
+  const headersCSV = headers;
+  const dataCSV = data;
+  const rows = dataCSV.map(user =>
+    `${user.Name},${user.Score}`
   );
-  return sameHeaders.concat(rows).join("\n");
+  return headersCSV.concat(rows).join("\n");
 };
+
+// Take all the newPointsScored and overwrite the existing test.csv
+function writeNewScoreboard (newPointsScored) {
+
+  const fileName = "test.csv";
+  const sameHeaders = ["Name,Score"];
+  const scoreData = newPointsScored;
+  console.log("\nWe are placing the below scores into the CSV extractor.");
+  console.log(newPointsScored);
+  let extractedScoreData = extractAsCSV(sameHeaders, scoreData); // Format the data into comma-separated values with return lines.
+
+  console.log(extractedScoreData); // Show what the extracted score data going into the test.csv file looks like.
+
+  // Write the extracted score data into the test.csv file.
+  fs.writeFile(fileName, extractedScoreData, err => {
+    if (err) {
+      console.log("\nHey, the scoreboard did not get updated. What gives?\n");
+    }
+    else {
+      console.log ("\nThe scoreboard was updated!\n");
+    }
+  });
+  // Take in test.csv
+  // Pass data into an array object
+  // Look for any Name matches
+  // Add their current score and their new points
+  // Overwrite the entry in the array that matches their Name
+  // Do the previous steps with all other guesses until we are ready to write to test.csv
+};
+
+
+updateScoreboard(songNumber, correctAnswers);
 
 // Empty the correctAnswers array when the next song is queued up.
 function emptyCorrectAnswers() {
@@ -317,9 +461,13 @@ function onMessageHandler (target, context, msg, self) {
   console.log(userAnswering);
 
   if(nextMessage === "Next Song" && userAnswering === "powertomario") { // If next song
-  
+    
+    console.log("\nTracking correct answers for Song #" + songNumber + "."); // number
+    console.log("Users correct include: " + correctAnswers + "\n"); // object
+
     // Track who answered correctly, then clear the array.
     trackCorrectAnswers(songNumber, correctAnswers);
+    updateScoreboard(songNumber, correctAnswers);
     emptyCorrectAnswers();
 
     // Increases current song number by 1.
@@ -327,6 +475,8 @@ function onMessageHandler (target, context, msg, self) {
     console.log(songNumber);
   }
   else {
+    // If username is equal to "Streamlabs", or any chatbot name.
+
     // Checks for matching correct answer, expected value is 'true' or 'false'.
     checkAnswer(songNumber, nextMessage, userAnswering);
     console.log("###");
