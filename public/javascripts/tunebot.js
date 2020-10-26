@@ -25,11 +25,11 @@ const tmi = require('tmi.js');
 // Define configuration options for Tunebot.
 const opts = {
   identity: {
-    username: "powertomario",
-    password: "oauth:c1vlc9vtbjth8avv9x3eioitda922n" //oauth:
+    username: "",
+    password: "" //oauth:
   },
   channels: [
-    "powertomario"
+    ""
   ]
 };
 
@@ -66,16 +66,6 @@ const csvWriterGuessedBy = createCsvWriter({
   ]
 });
 
-// Create the initial header information to write to scoreboard.csv
-const csvWriterScoreboard = createCsvWriter({
-  path: 'scoreboard.csv',
-  header: [
-    {id: 'username', title: 'Username'},
-    {id: 'score', title: 'Score'}
-  ]
-});
-
-
 /*
 **  Initializing variables for future functions.
 */
@@ -85,24 +75,20 @@ let correctAnswers = []; // This is for all users who answer correctly.
 let currentScores = []; // This is for the scoreboard updates.
 let songNumber = 1; // First song in a new Tunebot contest.
 
-
 /*
 **  Track the users who answered correctly with the songsguessed.csv file.
 */
 
 function trackCorrectAnswers(songNum, usersAnswered) {
   // Capture who answered this song correctly.
-  let records = {songnumber: songNum.toString(), guessedby1: usersAnswered[0], guessedby2: usersAnswered[1], guessedby3: usersAnswered[2]};
-  
-  console.log(records); // Who got answers correct?
+  const recordsCorrect = [{songnumber: songNum.toString(), guessedby1: usersAnswered[0], guessedby2: usersAnswered[1], guessedby3: usersAnswered[2]}];
 
   // Enter a new record into the songsguessed.csv file (new line written).
-  csvWriterGuessedBy.writeRecords(records)
+  csvWriterGuessedBy.writeRecords(recordsCorrect)
     .then( () => {
-      console.log("Correct answers for Song # " + songNum + " have been logged successfully!\n") // Log that the .writeRecords() method succeeded.
-    });
-
-  records.length = 0;
+      console.log("Correct answers for Song # " + songNum + " have been logged successfully!\n"); // Log that the .writeRecords() method succeeded.
+  });
+  recordsCorrect.length = 0;
   return;
 }
 
@@ -111,8 +97,8 @@ function updateScoreboard(songNum, usersAnswered) {
   // Capture who answered this song correctly.
   let records = {songnumber: songNum, guessedby1: usersAnswered[0], guessedby2: usersAnswered[1], guessedby3: usersAnswered[2]};
 
-  // Overwrite the test.csv file with updated standings.
-  fs.createReadStream('test.csv')
+  // Overwrite the scoreboard.csv file with updated standings.
+  fs.createReadStream('scoreboard.csv')
   .pipe(csv())
   .on('data', (data) => {
     currentScores.push(data);
@@ -259,7 +245,7 @@ function updateScoreboard(songNum, usersAnswered) {
       console.log("\nSorting the scores for Song #" + songNum + ".");
       currentScores = sortNewLeaderboard(currentScores); // Order from largest score to smallest score.
 
-      // Overwrite the test.csv file.
+      // Overwrite the scoreboard.csv file.
       writeNewScoreboard(currentScores);
       currentScores.length = 0;
     }
@@ -318,7 +304,6 @@ function sortNewLeaderboard(theScoreboard) {
                   console.log("This is the latest high score, set by " + objectToBeSorted.Name);
                   sortedScoreboard.unshift(objectToBeSorted);
               }
-
           }
       }
       else if(objectToBeSorted.Score <= sortedScoreboard[sortedScoreboard.length - 1].Score) {  // If the current score is less than or equal to the very last index, push the score to the end of the array.
@@ -342,19 +327,19 @@ function extractAsCSV(headers, data) {
   return headersCSV.concat(rows).join("\n");
 };
 
-// Take all the newPointsScored and overwrite the existing test.csv
+// Take all the newPointsScored and overwrite the existing scoreboard.csv
 function writeNewScoreboard (newPointsScored) {
 
-  const fileName = "test.csv";
+  const fileName = "scoreboard.csv";
   const sameHeaders = ["Name,Score"];
   const scoreData = newPointsScored;
   console.log("\nWe are placing the below scores into the CSV extractor.");
   console.log(newPointsScored);
   let extractedScoreData = extractAsCSV(sameHeaders, scoreData); // Format the data into comma-separated values with return lines.
 
-  console.log(extractedScoreData); // Show what the extracted score data going into the test.csv file looks like.
+  console.log(extractedScoreData); // Show what the extracted score data going into the scoreboard.csv file looks like.
 
-  // Write the extracted score data into the test.csv file.
+  // Write the extracted score data into the scoreboard.csv file.
   fs.writeFile(fileName, extractedScoreData, err => {
     if (err) {
       console.log("\nHey, the scoreboard did not get updated. What gives?\n");
@@ -363,16 +348,7 @@ function writeNewScoreboard (newPointsScored) {
       console.log ("\nThe scoreboard was updated!\n");
     }
   });
-  // Take in test.csv
-  // Pass data into an array object
-  // Look for any Name matches
-  // Add their current score and their new points
-  // Overwrite the entry in the array that matches their Name
-  // Do the previous steps with all other guesses until we are ready to write to test.csv
 };
-
-
-updateScoreboard(songNumber, correctAnswers);
 
 // Empty the correctAnswers array when the next song is queued up.
 function emptyCorrectAnswers() {
