@@ -52,6 +52,7 @@ const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 
 // Empty out all object references and values.
 function isEmpty(obj) {
+  console.log("\nEmptying " + obj + "...\n");
   return Object.keys(obj).length === 0;
 }
 
@@ -73,7 +74,7 @@ const csvWriterGuessedBy = createCsvWriter({
 let songsList = []; // This is to capture all songs in the .csv file.
 let correctAnswers = []; // This is for all users who answer correctly.
 let currentScores = []; // This is for the scoreboard updates.
-let songNumber = 1; // First song in a new Tunebot contest.
+let songNumber = 16; // First song in a new Tunebot contest.
 
 /*
 **  Track the users who answered correctly with the songsguessed.csv file.
@@ -86,7 +87,7 @@ function trackCorrectAnswers(songNum, usersAnswered) {
   // Enter a new record into the songsguessed.csv file (new line written).
   csvWriterGuessedBy.writeRecords(recordsCorrect)
     .then( () => {
-      console.log("Correct answers for Song # " + songNum + " have been logged successfully!\n"); // Log that the .writeRecords() method succeeded.
+      console.log("\nCorrect answers for Song # " + songNum + " have been logged successfully!\n"); // Log that the .writeRecords() method succeeded.
   });
   recordsCorrect.length = 0;
   return;
@@ -126,8 +127,8 @@ function updateScoreboard(songNum, usersAnswered) {
     let matchCounter2 = 0; // Did the second correct match an existing entry?
     let matchCounter3 = 0; // Did the third correct match an existing entry?
 
-    // If we have an active scoreboard...
-    if (!isEmpty(currentScores)) {
+    // If we have an active scoreboard...and it is a regular round...
+    if (!isEmpty(currentScores) && songNum < 41) {
       console.log("There is an active scoreboard!");
       let currentScore = 0;
 
@@ -213,6 +214,93 @@ function updateScoreboard(songNum, usersAnswered) {
           newEntry3 = {};
       }
     }
+    // If we have an active scoreboard...and it is the mash-up round...
+    else if (!isEmpty(currentScores) && songNum >= 41) {
+      console.log("There is an active scoreboard!");
+      let currentScore = 0;
+
+      for (i = 0 ; i < currentScores.length ; i++) {
+        // If there was one correct answer...
+        if (currentScores[i].Name === records.guessedby1) {
+          console.log(records.guessedby1 + " just scored 3 points!"); // Log that the first guesser scored 3 points.
+
+          currentScore = parseInt(currentScores[i].Score); // Change the string of 'Score' and turn it into a number.
+          currentScore = currentScore + 3;
+          currentScores[i].Score = currentScore.toString();
+
+          console.log(currentScores[i].Score);
+          console.log(typeof(currentScores[i].Score));
+
+          console.log(records.guessedby1 + " has a total of " + currentScores[i].Score + " points!"); // Log the new score for this guesser.
+          
+          matchCounter1++;
+        }
+        // If there was a second correct answer...
+        else if (currentScores[i].Name === records.guessedby2) {
+          console.log(records.guessedby2 + " just scored 2 points!");
+
+          currentScore = parseInt(currentScores[i].Score); // Change the string of 'Score' and turn it into a number.
+          console.log(typeof(currentScore));
+          currentScore = currentScore + 2;
+          currentScores[i].Score = currentScore.toString();
+
+          console.log(currentScores[i].Score);
+          console.log(typeof(currentScores[i].Score));
+
+          console.log(records.guessedby2 + " has a total of " + currentScores[i].Score + " points!");
+
+          matchCounter2++;
+        }
+        // If there was a third correct answer...
+        else if (currentScores[i].Name === records.guessedby3) {
+          console.log(records.guessedby3 + " just scored 1 point!");
+
+          currentScore = parseInt(currentScores[i].Score); // Change the string of 'Score' and turn it into a number.
+          currentScore = currentScore + 1;
+          currentScores[i].Score = currentScore.toString();
+
+          console.log(currentScores[i].Score);
+          console.log(typeof(currentScores[i].Score));
+
+          console.log(records.guessedby3 + " has a total of " + currentScores[i].Score + " points!");
+          
+          matchCounter3++;
+        }
+      }
+
+      // If the leaderboard is active, but we have new scorers...
+      if (matchCounter1 === 0  && typeof(records.guessedby1) !== "undefined") {
+        console.log(records.guessedby1 + " has scored 3 points and has joined the leaderboard!");
+
+        let newEntry1 = {Name: records.guessedby1, Score: "3"};
+
+        currentScores.push(newEntry1);
+        console.log(currentScores);
+
+        newEntry1 = {};
+        
+      }
+      if (matchCounter2 === 0  && typeof(records.guessedby2) !== "undefined") {
+          console.log(records.guessedby3 + " has scored 2 points and has joined the leaderboard!");
+
+          let newEntry2 = {Name: records.guessedby2, Score: "2"};
+
+          currentScores.push(newEntry2);
+          console.log(currentScores);
+
+          newEntry2 = {};
+      }
+      if (matchCounter3 === 0  && typeof(records.guessedby3) !== "undefined") {
+          console.log(records.guessedby3 + " has scored 1 point and has joined the leaderboard!");
+
+          let newEntry3 = {Name: records.guessedby3, Score: "1"};
+
+          currentScores.push(newEntry3);
+          console.log(currentScores);
+
+          newEntry3 = {};
+      }
+    }
     // If nobody has scored yet...
     else if (isEmpty(currentScores)) {
 
@@ -249,6 +337,7 @@ function updateScoreboard(songNum, usersAnswered) {
       writeNewScoreboard(currentScores);
       currentScores.length = 0;
     }
+    currentScores.length = 0;
   });
   
   records.length = 0;
@@ -283,7 +372,7 @@ function sortNewLeaderboard(theScoreboard) {
           console.log(sortedScoreboard);
           console.log("\n");
       }
-      else if(objectToBeSorted.Score > sortedScoreboard[sortedScoreboard.length - 1].Score) {  // New score is greater than the very last index.
+      else if(parseInt(objectToBeSorted.Score, 10) > parseInt(sortedScoreboard[sortedScoreboard.length - 1].Score, 10)) {  // New score is greater than the very last index.
           if(sortedScoreboard.length - 1 === 0) {  // New score is greater than the current index AND that just happens to be index[0] of the array.
               console.log("This is the new highest score, by " + objectToBeSorted.Name);
               sortedScoreboard.unshift(objectToBeSorted);  // Shove item into the first array index, move all others forward.
@@ -291,7 +380,7 @@ function sortNewLeaderboard(theScoreboard) {
           else {
               x = sortedScoreboard.length - 2;
               while(x >= 0) {
-                  if(objectToBeSorted.Score <= sortedScoreboard[x].Score) {  // If the current score is less than or equal to the next index of the array, splice it in between it and the lower index.
+                  if(parseInt(objectToBeSorted.Score, 10) <= parseInt(sortedScoreboard[x].Score, 10)) {  // If the current score is less than or equal to the next index of the array, splice it in between it and the lower index.
                       console.log("Placing " + objectToBeSorted.Name + " between " + sortedScoreboard[x].Name + " and " + sortedScoreboard[x+1].Name);
                       start = x + 1;
                       sortedScoreboard.splice(start, deleteCount, objectToBeSorted);
@@ -306,7 +395,7 @@ function sortNewLeaderboard(theScoreboard) {
               }
           }
       }
-      else if(objectToBeSorted.Score <= sortedScoreboard[sortedScoreboard.length - 1].Score) {  // If the current score is less than or equal to the very last index, push the score to the end of the array.
+      else if(parseInt(objectToBeSorted.Score, 10) <= parseInt(sortedScoreboard[sortedScoreboard.length - 1].Score, 10)) {  // If the current score is less than or equal to the very last index, push the score to the end of the array.
           sortedScoreboard.push(objectToBeSorted);
       }
   }
@@ -372,6 +461,7 @@ function checkAnswer(currentSong, answer, usersName) {
 
     // Assigns the current answer to our checking variable. (The title of the game)
     answerToCheck = songsList[`${currentSong}`].Game;
+    answerToCheck2 = songsList[`${currentSong}`].Game2; // REMOVE IF FIRST NTGT DOES NOT WORK
     console.log(answerToCheck);
 
     // Turns the input into a string and removes all non-alphanumeric characters.
@@ -382,7 +472,7 @@ function checkAnswer(currentSong, answer, usersName) {
     // Super Mario Bros. 3 or supermariobros3, both are correct.
 
     // If they match, return true. Otherwise, return false.
-    if(regexReplace(answer).toLowerCase() === regexReplace(answerToCheck).toLowerCase()) {
+    if(regexReplace(answer).toLowerCase() === regexReplace(answerToCheck).toLowerCase() || regexReplace(answer).toLowerCase() === regexReplace(answerToCheck2).toLowerCase()) { // REMOVE SECOND CONDITION IF NTGT DOES NOT WORK
       
       console.log('Answer = ' + true);
 
@@ -423,7 +513,6 @@ function checkAnswer(currentSong, answer, usersName) {
 **  Every time a message is typed into the Twitch chat, do stuff with it!
 **  Here is our meat and potatoes of Tunebot.js!
 */
-
 function onMessageHandler (target, context, msg, self) {
   
   // Remove whitespace from chat message
