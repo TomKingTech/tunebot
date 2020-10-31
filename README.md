@@ -2,6 +2,8 @@
 
 Take your Twitch channel chat room and turn it into a fully-automated music trivia experience. Archive who got correct answers during which songs/questions, and take your hands off scoring updates with a fully-automated workflow using Node modules!
 
+(Be sure to clear out your .csv files of everything except the header row to start a fresh contest, this is necessary as of v0.1.0)
+
 ---
 
 ## Dependencies
